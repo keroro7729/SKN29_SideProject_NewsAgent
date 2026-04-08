@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+
+# 환경변수
+.env
+
+# 로그
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 테스트/커버리지
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# FastAPI 실행 캐시
+*.db
