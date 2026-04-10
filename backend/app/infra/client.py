@@ -115,7 +115,7 @@ class OpenAIClient:
         """
         if not isinstance(system_prompt, str) or not system_prompt.strip():
             raise ValueError("system_prompt는 비어 있지 않은 문자열이어야 합니다.")
-
+ 
     def _build_input(
         self,
         history: Optional[List[Dict[str, str]]],  # 이전 대화 내역
@@ -175,6 +175,7 @@ class OpenAIClient:
         )
 
         return input_items
+
 
     def _handle_exception(self, e: Exception, attempt: int) -> None:
         """
