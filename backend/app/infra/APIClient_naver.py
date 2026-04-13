@@ -22,7 +22,7 @@ class NaverNewsClient:
     # ========================================
     # 뉴스 API 호출 함수
     # ========================================
-    def get_news(self, query, display=1,start=1,sort="date"):             
+    def get_news(self, query, display=10,start=1,sort="date"):             
         if not query or not isinstance(query, str):
             raise ValueError(f"에러:query는 비어있지 않은 문자열이어야 합니다")
         url = "https://openapi.naver.com/v1/search/news.json"
@@ -43,7 +43,7 @@ class NaverNewsClient:
         }
 
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=5)
+            response = requests.get(url, headers=headers, params=params, timeout=10)
 
             # 인증 관련 체크
             if response.status_code == 401:
@@ -106,6 +106,10 @@ class NaverNewsClient:
             if not isinstance(item,dict):
                 continue # 이상한 데이터는 버림
             try:
+                url = item.get("link", "") or ""                    
+                if not url.startswith("https://n.news.naver.com"): # 네이버 뉴스링크로 시작하는 것만 가져오기
+                    continue     
+                url = url.split("?")[0]                          
                 title = self.clean_text(item.get("title"))
                 content = self.clean_text(item.get("description"))
                 pub_date = self.format_date(item.get("pubDate"))
@@ -113,7 +117,7 @@ class NaverNewsClient:
                 results.append({
                     "title": title,
                     "content": content,
-                    "url": item.get("link", "") or "",
+                    "url": url,
                     "originallink": item.get("originallink", "") or "",
                     "date": pub_date
                 })
