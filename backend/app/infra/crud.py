@@ -51,3 +51,31 @@ def get_messages_by_session(
         .order_by(Message.created_at.asc())
         .all() # pagenation 고려
     )
+
+
+
+
+
+#######################################################################################
+# 뉴스 기사 저장/조회/요약 결과 저장 관련 함수 (임시)
+#######################################################################################
+
+def create_news_article(db, article_data: dict):
+    """
+    기사 저장
+    """
+    pass
+
+
+def get_news_by_link(db, link: str):
+    """
+    링크로 기사 조회
+    """
+    pass
+
+
+def save_summary_result(db, article_id: int, summary: str):
+    """
+    요약 결과 저장
+    """
+    pass

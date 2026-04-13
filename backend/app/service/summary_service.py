@@ -22,3 +22,10 @@ def summary(news_datas: List[str]) -> str:
     )
 
     return response.text
+
+
+def summarize_text(summary_input: str) -> str:
+    """
+    나중에 OpenAI 또는 다른 요약 모델 호출을 붙일 자리
+    """
+    return ""
