@@ -4,8 +4,7 @@ import html
 import requests
 from typing import Dict, Any, List
 from bs4 import BeautifulSoup
-
-from app.api.config import (
+from app.config import (
     NAVER_CLIENT_ID,
     NAVER_CLIENT_SECRET,
     NAVER_NEWS_API_URL,
