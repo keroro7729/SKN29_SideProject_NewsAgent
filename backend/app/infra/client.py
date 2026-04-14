@@ -115,7 +115,8 @@ class OpenAIClient:
         """
         if not isinstance(system_prompt, str) or not system_prompt.strip():
             raise ValueError("system_prompt는 비어 있지 않은 문자열이어야 합니다.")
- 
+    
+    # opneai responses api 형식에 맞게 바꾸는 함수
     def _build_input(
         self,
         history: Optional[List[Dict[str, str]]],  # 이전 대화 내역
@@ -144,7 +145,7 @@ class OpenAIClient:
         recent = history[-20:]
 
         # user/assistant 가 반드시 쌍을 이루어야 API가 정상 동작함
-        # 홀수 개이면 가장 오래된 메시지 1개를 제거해서 짝수로 맞춤
+        # 홀수 개이면 가장 오래된 메시지 1개를 제거해서 짝수로 맞춤 - 구조적 안정성
         if len(recent) % 2 != 0:
             recent = recent[1:]
 
@@ -207,7 +208,7 @@ class OpenAIClient:
             raise RuntimeError(f"OpenAI 호출 실패: {e}") from e
 
     # ------------------------------------------------------------------ #
-    #  외부 공개 메서드 (프론트 담당자가 호출하는 부분)                   #
+    #  외부 공개 메서드 (프론트 담당자가 호출하는 부분)                         
     # ------------------------------------------------------------------ #
 
     def send_message(
@@ -228,8 +229,6 @@ class OpenAIClient:
                 user_input=user_input,
                 history=st.session_state.history,
             )
-            st.write(result.text)
-            st.caption(f"토큰: {result.total_tokens}")
         """
         self._validate_system_prompt(system_prompt)
         input_items = self._build_input(history, user_input)
@@ -291,7 +290,7 @@ class OpenAIClient:
     ) -> Iterator[str]:
         """
         응답을 스트리밍(조각 단위)으로 받는 메서드.
-        응답이 생성되는 즉시 조각씩 yield해서 타이핑 효과를 낼 수 있음.
+        응답이 생성되는 즉시 조각씩 yield해서 *타이핑 효과* 를 낼 수 있음.
 
         send_message()와 차이:
             send_message()   → 응답 전체가 완성된 뒤 한 번에 반환
