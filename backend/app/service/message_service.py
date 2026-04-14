@@ -5,6 +5,7 @@ from app.infra.crud import (
     create_message,
     get_messages_by_session,
 )
+from app.model.agent import ChatBotAgent
 
 
 SESSION_ID = 1
@@ -19,7 +20,9 @@ def handle_user_message(db: Session, user_input: str):
     create_message(db, SESSION_ID, "user", user_input)
 
     # (임시) 에이전트 응답
-    response = "agent sample result"
+    # response = "agent sample result"
+    model = ChatBotAgent()
+    response = model.response(user_input)
     create_message(db, SESSION_ID, "assistant", response)
 
     return {
