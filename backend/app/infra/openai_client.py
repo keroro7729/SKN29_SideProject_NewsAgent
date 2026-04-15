@@ -1,3 +1,5 @@
+# LangChain 도입으로 폐기될 예정
+
 import logging
 import os
 import time
