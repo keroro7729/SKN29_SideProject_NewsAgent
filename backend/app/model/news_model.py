@@ -1,3 +1,5 @@
+# 네이밍 news_models.py 복수형도 괜찮을거 같네요
+
 from typing import TypedDict
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from datetime import datetime, timezone
@@ -13,6 +15,7 @@ class News(Base):
     article_url = Column(String(1000), nullable=False, unique=True)
     image_url = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
+    # 카테고리 태그(list)도 추가 + list 속성은 orm에서 어떻게 처리돼서 db에는 어떻게 될까?
     # crawl_status = Column(String(20), default="pending")
     # error_message = Column(Text, nullable=True)
     published_at = Column(DateTime, nullable=True)
