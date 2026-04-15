@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from app.model.agent_session import AgentSession
 from app.model.message import Message
 from datetime import datetime
-from app.model.news import News
+from app.model.news_model import News 
 from app.model.news_model import NewsItem
 
 # ------------------------
@@ -59,61 +60,92 @@ def get_messages_by_session(
 
 
 #######################################################################################
-# 뉴스 기사 저장/조회/요약 결과 저장 관련 함수 (임시)
+# crawling
 #######################################################################################
 
-def parse_pub_date(pub_date_str: str | None) -> datetime | None:
-    """네이버 API pubDate 문자열 → datetime 변환"""
-    if not pub_date_str:
+def get_news_by_article_url(db: Session, article_url: str) -> News | None:
+    if not article_url:
         return None
-    try:
-        return datetime.strptime(pub_date_str, "%a, %d %b %Y %H:%M:%S %z")
-    except ValueError:
-        return None
+    return db.query(News).filter(News.article_url == article_url).first()
 
 def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
-    """뉴스 아이템 리스트 전체 저장, 중복 링크는 스킵"""
-    saved = []
+    """
+    뉴스 여러 건 저장
+    - article_url 기준 중복 스킵
+    - 빈 article_url 스킵
+    """
+    if not items:
+        return []
 
-    for item in items:
-        link = item.get("link") or item.get("crawl_url", "")
+    saved: list[News] = []
 
-        # 중복 체크
-        if db.query(News).filter(News.link == link).first():
-            continue
+    # 입력 데이터에서 유효한 URL만 추출
+    article_urls = {
+        item.get("article_url", "").strip()
+        for item in items
+        if item.get("article_url")
+    }
 
-        news = News(
-            title         = item.get("title", ""),
-            description   = item.get("description"),
-            full_content  = item.get("full_content"),
-            link          = link,
-            original_link = item.get("originallink"),
-            image_url     = item.get("image_url"),
-            crawl_status  = item.get("crawl_status", "failed"),
-            error_message = item.get("error_message"),
-            pub_date      = parse_pub_date(item.get("pubDate")),
-        )
-        db.add(news)
-        saved.append(news)
+    # 기존 URL 한 번에 조회
+    existing_urls = {
+        row[0]
+        for row in db.query(News.article_url)
+        .filter(News.article_url.in_(article_urls))
+        .all()
+    }
 
-    db.commit()
+    try:
+        for item in items:
+            article_url = item.get("article_url", "").strip()
+            if not article_url:
+                continue
 
-    for news in saved:
-        db.refresh(news)
+            if article_url in existing_urls:
+                continue
 
-    return saved
+            news = News(
+                title=item.get("title", ""),
+                full_content=item.get("full_content"),
+                article_url=article_url,
+                image_url=item.get("image_url"),
+                summary=item.get("summary"),
+                #crawl_status=item.get("crawl_status", "pending"),
+                #summary_status=item.get("summary_status", "pending"),
+                #error_message=item.get("error_message"),
+                published_at=item.get("published_at"),
+            )
+            db.add(news)
+            saved.append(news)
+            existing_urls.add(article_url)
 
-def get_news_by_link(db: Session, link: str) -> News | None:
-    """링크로 기사 조회"""
-    return db.query(News).filter(News.link == link).first()
+        db.commit()
+
+        for news in saved:
+            db.refresh(news)
+
+        return saved
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def save_summary_result(db: Session, article_id: int, summary: str) -> News | None:
-    """요약 결과 저장 (LLM 요약 완료 후 UPDATE)"""
+    """
+    요약 결과 저장
+    """
     news = db.query(News).filter(News.id == article_id).first()
     if not news:
         return None
-    news.summary = summary
-    db.commit()
-    db.refresh(news)
-    return news
+
+    try:
+        news.summary = summary
+        # news.summary_status = "success"
+        db.commit()
+        db.refresh(news)
+        return news
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
+
