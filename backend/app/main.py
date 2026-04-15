@@ -14,7 +14,6 @@ def create_app() -> FastAPI:
 
     return app
 
-
 app = create_app()
 
 @app.on_event("startup")
@@ -25,19 +24,3 @@ def startup():
     Base.metadata.create_all(bind=engine)
 
 
-########################################################################################
-# 뉴스 크롤링 출력 (임시)
-########################################################################################
-
-from pprint import pprint
-from app.service.news_service import search_and_prepare_news_for_agent
-
-if __name__ == "__main__":
-    query = input("검색어를 입력하세요: ").strip()
-
-    if not query:
-        print("검색어가 비어 있습니다.")
-        raise SystemExit(1)
-
-    result = search_and_prepare_news_for_agent(query=query, target_count=10)
-    pprint(result, sort_dicts=False)
