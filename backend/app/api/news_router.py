@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["news"],
 )
 
-
+# 검색 -> api 나가고 크롤링 db저장까지
 @router.post("/search", response_model=None)
 def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_db)):
     """
@@ -23,7 +23,7 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
     result: NewsSearchResponse = search_and_prepare_news_for_agent(query=query, target_count=count)
     items = result.get("items", [])
 
-    saved = create_news_articles(db=db, items=items)
+    saved = create_news_articles(db=db, items=items) # crud 라우터 레벨에서 호출, 서비스에 있으면 좋지 않을까?
 
     return {
         "query": result.get("query"),
@@ -32,6 +32,8 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
     }
 
 
+# 기사 url을 키 같이 사용하기로 했나본데? 괜찮은데? 아주 좋습니다.
+# 단건 조회 미리 만들어둔것도 좋은거 같습니다.
 @router.get("/{article_url:path}")
 def get_news(article_url: str, db: Session = Depends(get_db)):
     """
