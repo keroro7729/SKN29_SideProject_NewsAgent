@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.engine import URL
 
+
 load_dotenv(override=True)
 
 DB_USER = os.getenv("DB_USER")
@@ -43,3 +44,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+
+def init_db():
+    """앱 시작 시 테이블 생성"""
+    Base.metadata.create_all(bind=engine)

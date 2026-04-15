@@ -5,6 +5,8 @@ import requests
 from typing import Dict, Any, List
 from bs4 import BeautifulSoup
 
+from app.model.news_model import NewsItem, NewsSearchResponse
+
 from app.api.config import (
     NAVER_CLIENT_ID,
     NAVER_CLIENT_SECRET,
@@ -106,7 +108,7 @@ def search_news(query: str, display: int = 10, start: int = 1, sort: str = "date
 
 
 # --------------------------------------------------
-# 3. 크롤링 보조 (html 요청)
+# 4. 크롤링 보조 (html 요청)
 # --------------------------------------------------
 def fetch_html(url: str) -> str:
     
@@ -126,7 +128,7 @@ def fetch_html(url: str) -> str:
     return response.text
 
 # --------------------------------------------------
-# 4. URL 유형 판별
+# 5. URL 유형 판별
 # --------------------------------------------------
 
 # 필터를 통해 네이버 뉴스 기사만 선별
@@ -152,7 +154,7 @@ def pick_best_url(item: Dict[str, Any]) -> str:
 
 
 # --------------------------------------------------
-# 5. 네이버 뉴스 파서
+# 6. 네이버 뉴스 파서
 # --------------------------------------------------
 def parse_naver_news(html_text: str) -> Dict[str, str]:
     
@@ -164,14 +166,14 @@ def parse_naver_news(html_text: str) -> Dict[str, str]:
     image_url = ""
 
     # ------------------------------------------
-    # 5-1. 본문 영역 찾기
+    # 6-1. 본문 영역 찾기
     # ------------------------------------------
     article_tag = soup.find("article", id="dic_area")
     if article_tag is None:
         article_tag = soup.find(id="newsct_article")
 
     # ------------------------------------------
-    # 5-2. 본문에서 불필요한 요소 제거
+    # 6-2. 본문에서 불필요한 요소 제거
     # ------------------------------------------
     if article_tag:
         for tag in article_tag.select(".img_desc"):
@@ -185,7 +187,7 @@ def parse_naver_news(html_text: str) -> Dict[str, str]:
     full_content = clean_text(full_content)
 
     # ------------------------------------------
-    # 5-3. 대표 이미지 추출
+    # 6-3. 대표 이미지 추출
     # ------------------------------------------
     img_tag = soup.find("img", id="img1")
 
@@ -210,7 +212,7 @@ def parse_naver_news(html_text: str) -> Dict[str, str]:
     }
 
 # --------------------------------------------------
-# . 기사 1개 크롤링
+# 7. 기사 1개 크롤링
 # --------------------------------------------------
 def crawl_article(url: str) -> Dict[str, str]:
     """
@@ -246,7 +248,7 @@ def crawl_article(url: str) -> Dict[str, str]:
 
 
 # --------------------------------------------------
-# 7. 기사 1개 요약, agent용 구조 정리
+# 8. 기사 1개 요약, agent용 구조 정리
 # --------------------------------------------------
 def enrich_item_for_summary_agent(item: dict) -> dict:
     result = copy.deepcopy(item)
@@ -281,7 +283,7 @@ def enrich_item_for_summary_agent(item: dict) -> dict:
     return result
 
 # --------------------------------------------------
-# 8. 요약 대상 기사만 필터링
+# 9. 요약 대상 기사만 필터링
 # --------------------------------------------------
 
 # 최소 길이 100으로, 너무 짧은 기사는 제외
@@ -302,7 +304,7 @@ def filter_valid_articles_for_summary(news_response: Dict[str, Any], min_length:
 
 
 # --------------------------------------------------
-# . 검색 + 크롤링 + 요약 입력 생성
+# 10. 검색 + 크롤링 + 요약 입력 생성
 # --------------------------------------------------
 def search_and_prepare_news_for_agent(query: str, target_count: int = 10) -> Dict[str, Any]:
     """

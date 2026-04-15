@@ -24,8 +24,14 @@ def summary(news_datas: List[str]) -> str:
     return response.text
 
 
-def summarize_text(summary_input: str) -> str:
+
+
+def summarize_news_item(item: NewsItem) -> NewsItem:
     """
-    나중에 OpenAI 또는 다른 요약 모델 호출을 붙일 자리
+    단일 뉴스 아이템 요약 처리
+    summary_input → summary 채워서 반환
     """
-    return ""
+    summary_input = item.get("summary_input", "")
+    item["summary"] = summarize_text(summary_input)
+    return item
+
