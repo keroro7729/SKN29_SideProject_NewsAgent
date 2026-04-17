@@ -38,6 +38,7 @@ def _init_state() -> None:
         "selected_article": None,     # 채팅 컨텍스트로 넘길 기사
         "input_key":        0,        # 채팅 입력창 초기화용 카운터
         "active_category":  CATEGORIES[0],   # 현재 선택된 카테고리 탭
+        "used_suggestions": set(),    # 이미 클릭한 추천 질문 텍스트 집합
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -96,6 +97,7 @@ if search_clicked and query_input.strip():
     st.session_state.query            = query_input.strip()
     st.session_state.news_list        = []
     st.session_state.selected_article = None
+    st.session_state.used_suggestions = set()   # 새 검색 → 추천 질문 리셋
     _reset_visible_counts()   # 새 검색 → 모든 탭 페이지 상태 리셋
 
     with st.spinner("뉴스를 불러오는 중…"):
@@ -130,8 +132,9 @@ if not st.session_state.query:
     for i, (col, kw) in enumerate(zip(btn_cols, hot_keywords)):
         with col:
             if st.button(kw, key=f"hot_{i}", use_container_width=True):
-                st.session_state.query     = kw
-                st.session_state.news_list = get_dummy_news(category=CATEGORIES[0], query=kw)
+                st.session_state.query            = kw
+                st.session_state.news_list        = get_dummy_news(category=CATEGORIES[0], query=kw)
+                st.session_state.used_suggestions = set()   # 핫 키워드 클릭 → 추천 질문 리셋
                 _reset_visible_counts()   # 핫 키워드 클릭 → 페이지 상태 리셋
                 st.rerun()
 
