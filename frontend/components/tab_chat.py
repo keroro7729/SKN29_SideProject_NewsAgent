@@ -152,12 +152,28 @@ def render() -> None:
     # ② 대화 이력
     _render_messages()
 
+    # ③ 스크롤 앵커 및 자동 스크롤 스크립트 추가
+    # 메시지가 있을 때만 작동하도록 조건부 렌더링
+    if st.session_state.get("messages"):
+        st.markdown('<div id="scroll-anchor"></div>', unsafe_allow_html=True)
+        st.components.v1.html(
+            """
+            <script>
+                var scrollAnchor = window.parent.document.getElementById('scroll-anchor');
+                if (scrollAnchor) {
+                    scrollAnchor.scrollIntoView({behavior: 'smooth'});
+                }
+            </script>
+            """,
+            height=0,
+        )
+
     st.markdown('<div class="ni-rule"></div>', unsafe_allow_html=True)
 
-    # ③ 추천 질문
+    # ④ 추천 질문
     _render_suggestions()
 
-    # ④ 입력창 + 전송 버튼
+    # ⑤ 입력창 + 전송 버튼
     input_key = st.session_state.get("input_key", 0)
     col_input, col_send = st.columns([5, 1])
 
@@ -175,7 +191,7 @@ def render() -> None:
     if send_clicked and user_text.strip():
         _send_message(user_text.strip())
 
-    # ⑤ 대화 초기화
+    # ⑥ 대화 초기화
     if st.session_state.get("messages"):
         st.markdown("")
         if st.button("🗑️  대화 초기화"):
