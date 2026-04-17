@@ -13,13 +13,12 @@ st.set_page_config(
 )
 
 # ── 모듈 임포트 ───────────────────────────────────────────────────────────────
+from constants         import CATEGORIES, CATEGORY_EMOJI
 from styles.global_css import inject_css
 from data.dummy_news   import get_dummy_news, get_trending_keywords
-import components.tab_news        as tab_news
-import components.tab_social      as tab_social
-import components.tab_economy     as tab_economy
-import components.tab_sports_ent  as tab_sports_ent
-import components.tab_chat        as tab_chat
+import components.tab_news    as tab_news
+import components.tab_generic as tab_generic
+import components.tab_chat    as tab_chat
 
 
 # ── 전역 CSS 주입 ─────────────────────────────────────────────────────────────
@@ -38,7 +37,7 @@ def _init_state() -> None:
         "messages":         [],       # AI 채팅 이력
         "selected_article": None,     # 채팅 컨텍스트로 넘길 기사
         "input_key":        0,        # 채팅 입력창 초기화용 카운터
-        "active_category":  "전체",   # 현재 선택된 카테고리 탭
+        "active_category":  CATEGORIES[0],   # 현재 선택된 카테고리 탭
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -90,7 +89,7 @@ if search_clicked and query_input.strip():
         # from data.naver_api import fetch_news
         # st.session_state.news_list = fetch_news(st.session_state.query)
         st.session_state.news_list = get_dummy_news(
-            category="전체",
+            category=CATEGORIES[0],
             query=st.session_state.query,
         )
 
@@ -99,7 +98,7 @@ st.markdown('<div class="ni-rule"></div>', unsafe_allow_html=True)
 
 # ── 빈 상태: 검색 전 화면 ─────────────────────────────────────────────────────
 if not st.session_state.query:
-    hot_keywords = get_trending_keywords("전체")
+    hot_keywords = get_trending_keywords(CATEGORIES[0])
 
     # 인기 검색어 pill 태그 (HTML 렌더링)
     pills_html = "".join(
@@ -118,7 +117,7 @@ if not st.session_state.query:
         with col:
             if st.button(kw, key=f"hot_{i}", use_container_width=True):
                 st.session_state.query     = kw
-                st.session_state.news_list = get_dummy_news(category="전체", query=kw)
+                st.session_state.news_list = get_dummy_news(category=CATEGORIES[0], query=kw)
                 st.rerun()
 
     # 안내 문구
@@ -131,59 +130,26 @@ if not st.session_state.query:
 
 
 # ── 카테고리 탭 ───────────────────────────────────────────────────────────────
-# 탭 순서: 전체뉴스 / 사회 / 경제 / 스포츠 / 연예 / AI 채팅
-tabs = st.tabs(["📋 전체뉴스", "🏛️ 사회", "📈 경제", "⚽ 스포츠", "🎬 연예", "🤖 AI 채팅"])
-
-TAB_CATEGORIES = ["전체", "사회", "경제", "스포츠", "연예"]
-
+tab_labels = [f"{CATEGORY_EMOJI[c]} {c}" for c in CATEGORIES]
+tabs = st.tabs(tab_labels)
 
 # ── 탭별 기사 로딩 ────────────────────────────────────────────────────────────
 def _load(category: str) -> list[dict]:
-    """
-    카테고리에 맞는 기사 리스트를 반환합니다.
-    전체 탭은 session_state.news_list 를 그대로 사용하고,
-    나머지 탭은 해당 카테고리만 필터링해 반환합니다.
-    """
-    if category == "전체":
+    if category == CATEGORIES[0]: # "전체"
         return st.session_state.news_list
-
-    # 더미 데이터에서 해당 카테고리 기사를 별도로 가져옵니다.
-    # 실제 API 연동 시 DB 쿼리로 교체하세요.
     return get_dummy_news(category=category, query="")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 탭 0: 전체 뉴스
-# ══════════════════════════════════════════════════════════════════════════════
 with tabs[0]:
-    tab_news.render(_load("전체"))
+    tab_news.render(_load(CATEGORIES[0]))
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 1: 사회
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[1]:
-    tab_social.render(_load("사회"))
+# 탭 1~5: 사회 / 경제 / 스포츠 / 엔터 / IT/과학
+for i in range(1, 6):
+    with tabs[i]:
+        tab_generic.render(_load(CATEGORIES[i]), category=CATEGORIES[i])
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 2: 경제
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[2]:
-    tab_economy.render(_load("경제"))
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 3: 스포츠
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[3]:
-    tab_sports_ent.render(_load("스포츠"), category="스포츠")
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 4: 연예
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[4]:
-    tab_sports_ent.render(_load("연예"), category="연예")
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 5: AI 채팅
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[5]:
+# 탭 6: AI 채팅
+with tabs[6]:
     tab_chat.render()

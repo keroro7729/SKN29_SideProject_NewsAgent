@@ -1,6 +1,4 @@
 from sqlalchemy.orm import Session
-from app.service.chatbot_service import ChatBotService
-
 from app.infra.crud import (
     get_agent_session,
     create_agent_session,
@@ -20,8 +18,8 @@ def handle_user_message(db: Session, user_input: str):
 
     create_message(db, SESSION_ID, "user", user_input)
 
-    chatbot = ChatBotService()
-    response = chatbot.response(user_input)
+    # (임시) 에이전트 응답 데이터
+    response = "agent sample result"
     create_message(db, SESSION_ID, "assistant", response)
 
     return {
