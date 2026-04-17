@@ -12,7 +12,7 @@ def render(articles: list[dict], category: str) -> None:
         </div>
         """, unsafe_allow_html=True)
         return
- 
+
     # ── 필터 적용 ────────────────────────────────────────────────────────────
     filtered = render_filters(articles, key_prefix=category)
 

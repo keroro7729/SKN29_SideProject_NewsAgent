@@ -436,6 +436,42 @@ div[data-testid="stRadio"] label {
     letter-spacing: .3px;
     padding: 18px 0 0;
 }
+
+/* ── 기사 더보기 버튼 ────────────────────────────────────────── */
+.ni-load-more {
+    margin: 18px 0 8px;
+}
+
+/* ni-load-more 래퍼 내부의 Streamlit 버튼만 별도 스타일 적용 */
+.ni-load-more + div[data-testid="stButton"] > button,
+.ni-load-more ~ div[data-testid="stButton"] > button {
+    background: white !important;
+    color: #555 !important;
+    border: 1.5px solid #ddd9d2 !important;
+    border-radius: 0 !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    letter-spacing: 2px !important;
+    text-transform: none !important;
+    padding: 16px 20px !important;
+    transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .1s !important;
+}
+
+.ni-load-more + div[data-testid="stButton"] > button:hover,
+.ni-load-more ~ div[data-testid="stButton"] > button:hover {
+    background: #111 !important;
+    border-color: #111 !important;
+    color: #fff !important;
+    box-shadow: 4px 4px 0 #e8a020 !important;
+    transform: translate(-1px,-1px) !important;
+}
+
+.ni-load-more + div[data-testid="stButton"] > button:active,
+.ni-load-more ~ div[data-testid="stButton"] > button:active {
+    transform: translate(0,0) !important;
+    box-shadow: 2px 2px 0 #e8a020 !important;
+}
 """
 
 def inject_css():

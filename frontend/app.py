@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # ── 모듈 임포트 ───────────────────────────────────────────────────────────────
-from constants         import CATEGORIES, CATEGORY_EMOJI
+from constants         import CATEGORIES, CATEGORY_EMOJI, ARTICLES_PER_PAGE
 from styles.global_css import inject_css
 from data.dummy_news   import get_dummy_news, get_trending_keywords
 import components.tab_news    as tab_news
@@ -42,6 +42,18 @@ def _init_state() -> None:
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
+
+    # 카테고리별 "현재 표시 중인 기사 수" 초기화 (더보기 버튼용)
+    for cat in CATEGORIES:
+        key = f"visible_count_{cat}"
+        if key not in st.session_state:
+            st.session_state[key] = ARTICLES_PER_PAGE
+
+
+def _reset_visible_counts() -> None:
+    """모든 카테고리의 표시 개수를 기본값으로 리셋합니다 (검색/필터 변경 시)."""
+    for cat in CATEGORIES:
+        st.session_state[f"visible_count_{cat}"] = ARTICLES_PER_PAGE
 
 _init_state()
 
@@ -84,6 +96,7 @@ if search_clicked and query_input.strip():
     st.session_state.query            = query_input.strip()
     st.session_state.news_list        = []
     st.session_state.selected_article = None
+    _reset_visible_counts()   # 새 검색 → 모든 탭 페이지 상태 리셋
 
     with st.spinner("뉴스를 불러오는 중…"):
         # ─ 실제 API/DB 연동 시 이 라인만 교체 ─
@@ -119,6 +132,7 @@ if not st.session_state.query:
             if st.button(kw, key=f"hot_{i}", use_container_width=True):
                 st.session_state.query     = kw
                 st.session_state.news_list = get_dummy_news(category=CATEGORIES[0], query=kw)
+                _reset_visible_counts()   # 핫 키워드 클릭 → 페이지 상태 리셋
                 st.rerun()
 
     # 안내 문구

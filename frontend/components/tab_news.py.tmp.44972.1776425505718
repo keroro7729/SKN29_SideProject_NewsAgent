@@ -13,7 +13,7 @@ def render(articles: list[dict], tab_name: str = "전체") -> None:
         # 현재 검색어를 직접 드러내서 사용자가 원인을 바로 파악할 수 있게 함
         query = st.session_state.get("query", "")
         if query:
-            msg = ( 
+            msg = (
                 f"<strong>'{escape(query)}'</strong> 에 대한 검색 결과가 없습니다.<br>"
                 "다른 키워드를 시도하거나 카테고리를 변경해보세요."
             )
