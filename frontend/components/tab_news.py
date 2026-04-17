@@ -1,3 +1,4 @@
+from html import escape
 import streamlit as st
 from constants import CATEGORIES
 from components.article_card import render_card
@@ -9,12 +10,23 @@ _ALL = CATEGORIES[0]          # "전체"
 # ── 메인 렌더 함수 ───────────────────────────────────────────────────────────
 def render(articles: list[dict], tab_name: str = "전체") -> None:
     if not articles:
-        st.markdown("""
+        # 현재 검색어를 직접 드러내서 사용자가 원인을 바로 파악할 수 있게 함
+        query = st.session_state.get("query", "")
+        if query:
+            msg = (
+                f"<strong>'{escape(query)}'</strong> 에 대한 검색 결과가 없습니다.<br>"
+                "다른 키워드를 시도하거나 카테고리를 변경해보세요."
+            )
+        else:
+            msg = (
+                "검색 결과가 없습니다.<br>"
+                "다른 검색어를 시도하거나 카테고리를 변경해보세요."
+            )
+        st.markdown(f"""
         <div class="ni-empty">
             <div class="ni-empty-icon">◈</div>
             <div class="ni-empty-text">
-                검색 결과가 없습니다.<br>
-                다른 검색어를 시도하거나 카테고리를 변경해보세요.
+                {msg}
             </div>
         </div>
         """, unsafe_allow_html=True)
