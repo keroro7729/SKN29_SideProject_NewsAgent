@@ -39,7 +39,7 @@ html, body, [class*="css"] {
 
 .ni-logo {
     font-family: 'Playfair Display', serif;
-    font-size: 2.2rem;
+    font-size: 3.3rem;
     font-weight: 900;
     letter-spacing: -1px;
     color: #111;
@@ -48,7 +48,7 @@ html, body, [class*="css"] {
 
 
 .ni-meta {
-    font-size: 11px;
+    font-size: 15px;
     color: #888;
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -66,7 +66,7 @@ div[data-testid="stTabs"] [role="tablist"] {
 
 div[data-testid="stTabs"] button[role="tab"] {
     font-family: 'IBM Plex Sans', sans-serif !important;
-    font-size: 12px !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
     letter-spacing: 1.5px !important;
     text-transform: uppercase !important;
@@ -388,7 +388,7 @@ div[data-testid="stRadio"] label {
 }
 
 .ni-trending-label {
-    font-size: 11px;
+    font-size: 16px;
     font-weight: 600;
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -409,7 +409,7 @@ div[data-testid="stRadio"] label {
     border: 1.5px solid #ddd9d2;
     color: #444;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 500;
     padding: 5px 14px;
     border-radius: 999px;
@@ -431,7 +431,7 @@ div[data-testid="stRadio"] label {
 
 /* 착지 힌트 문구 */
 .ni-landing-hint {
-    font-size: 12.5px;
+    font-size: 15px;
     color: #aaa;
     letter-spacing: .3px;
     padding: 18px 0 0;
