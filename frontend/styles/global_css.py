@@ -440,4 +440,4 @@ div[data-testid="stRadio"] label {
 
 def inject_css():
     """전역 CSS를 Streamlit 페이지에 주입합니다."""
-    st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True) 
