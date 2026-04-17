@@ -173,21 +173,24 @@ def render() -> None:
     # ④ 추천 질문
     _render_suggestions()
 
-    # ⑤ 입력창 + 전송 버튼
+    # ⑤ 입력창 + 전송 버튼 (form으로 감싸 엔터키 지원)
     input_key = st.session_state.get("input_key", 0)
-    col_input, col_send = st.columns([5, 1])
 
-    with col_input:
-        user_text = st.text_input(
-            label="채팅 입력",
-            placeholder="메시지를 입력하세요…",
-            key=f"chat_input_{input_key}",
-            label_visibility="collapsed",
-        )
+    with st.form(key=f"chat_form_{input_key}", clear_on_submit=False):
+        col_input, col_send = st.columns([5, 1])
 
-    with col_send:
-        send_clicked = st.button("전송", key="send_btn", use_container_width=True)
+        with col_input:
+            user_text = st.text_input(
+                label="채팅 입력",
+                placeholder="메시지를 입력하세요…",
+                key=f"chat_input_{input_key}",
+                label_visibility="collapsed",
+            )
 
+        with col_send:
+            send_clicked = st.form_submit_button("전송", use_container_width=True)
+
+    # 엔터 또는 전송 버튼 클릭 시 동일하게 처리
     if send_clicked and user_text.strip():
         _send_message(user_text.strip())
 

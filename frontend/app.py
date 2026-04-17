@@ -64,21 +64,22 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# ── 검색창 ────────────────────────────────────────────────────────────────────
-col_q, col_btn = st.columns([5, 1])
+# ── 검색창 (form으로 감싸 엔터키 지원) ────────────────────────────────────────
+with st.form(key="search_form", clear_on_submit=False):
+    col_q, col_btn = st.columns([5, 1])
 
-with col_q:
-    query_input = st.text_input(
-        label="검색",
-        placeholder="검색어를 입력하세요  (예: 인공지능, 반도체, 손흥민, BTS)",
-        key="search_input",
-        label_visibility="collapsed",
-    )
+    with col_q:
+        query_input = st.text_input(
+            label="검색",
+            placeholder="검색어를 입력하세요  (예: 인공지능, 반도체, 손흥민, BTS)",
+            key="search_input",
+            label_visibility="collapsed",
+        )
 
-with col_btn:
-    search_clicked = st.button("검색", use_container_width=True)
+    with col_btn:
+        search_clicked = st.form_submit_button("검색", use_container_width=True)
 
-# 검색 실행: 버튼 클릭 또는 엔터 (input 값 변경 감지)
+# 검색 실행: 버튼 클릭 또는 엔터키 (form_submit_button이 둘 다 처리)
 if search_clicked and query_input.strip():
     st.session_state.query            = query_input.strip()
     st.session_state.news_list        = []
@@ -153,3 +154,88 @@ for i in range(1, 6):
 # 탭 6: AI 채팅
 with tabs[6]:
     tab_chat.render()
+
+
+# ── 맨 위로 가기 버튼 (스크롤 감지 JS) ────────────────────────────────────────
+st.components.v1.html(
+    """
+    <script>
+    (function() {
+        const parentDoc = window.parent.document;
+
+        // 기존 버튼 제거 (리런 시 중복 방지)
+        const oldBtn = parentDoc.getElementById('scrollTopBtn');
+        if (oldBtn) oldBtn.remove();
+
+        // 버튼 생성
+        const btn = parentDoc.createElement('button');
+        btn.id = 'scrollTopBtn';
+        btn.innerHTML = '↑';
+        btn.setAttribute('aria-label', '맨 위로');
+        btn.style.cssText = `
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #111;
+            color: #fff;
+            border: 2px solid #111;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+            box-shadow: 4px 4px 0 #e8a020;
+            z-index: 9999;
+            transition: background .15s, color .15s, transform .1s;
+        `;
+
+        btn.onmouseover = function() {
+            this.style.background = '#e8a020';
+            this.style.color = '#111';
+            this.style.borderColor = '#e8a020';
+            this.style.transform = 'translate(-1px,-1px)';
+        };
+        btn.onmouseout = function() {
+            this.style.background = '#111';
+            this.style.color = '#fff';
+            this.style.borderColor = '#111';
+            this.style.transform = 'translate(0,0)';
+        };
+
+        btn.onclick = function() {
+            // 두 가지 스크롤 대상 모두 시도 (Streamlit 환경 호환)
+            window.parent.scrollTo({top: 0, behavior: 'smooth'});
+            const mainEl = parentDoc.querySelector('section.main');
+            if (mainEl) mainEl.scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        parentDoc.body.appendChild(btn);
+
+        // 스크롤 감지 핸들러
+        function toggleBtn() {
+            const y1 = window.parent.scrollY || 0;
+            const mainEl = parentDoc.querySelector('section.main');
+            const y2 = mainEl ? mainEl.scrollTop : 0;
+            const scrolled = Math.max(y1, y2);
+
+            if (scrolled > 300) {
+                btn.style.display = 'block';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        // 부모 window 및 main 섹션 양쪽에 리스너 등록
+        window.parent.addEventListener('scroll', toggleBtn, true);
+        const mainEl = parentDoc.querySelector('section.main');
+        if (mainEl) mainEl.addEventListener('scroll', toggleBtn);
+
+        // 초기 상태 체크
+        toggleBtn();
+    })();
+    </script>
+    """,
+    height=0,
+)
