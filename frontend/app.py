@@ -156,14 +156,19 @@ with tabs[6]:
     tab_chat.render()
 
 
-# ── 맨 위로 가기 버튼 (스크롤 감지 JS) ────────────────────────────────────────
+# ── 맨 위로 가기 버튼 ─────────────────────────────────────────────────────────
 st.components.v1.html(
     """
     <script>
     (function() {
-        const parentDoc = window.parent.document;
+        let parentDoc;
+        try {
+            parentDoc = window.parent.document;
+        } catch (e) {
+            return;
+        }
 
-        // 기존 버튼 제거 (리런 시 중복 방지)
+        // 기존 버튼 제거 (리런 대비)
         const oldBtn = parentDoc.getElementById('scrollTopBtn');
         if (oldBtn) oldBtn.remove();
 
@@ -172,24 +177,25 @@ st.components.v1.html(
         btn.id = 'scrollTopBtn';
         btn.innerHTML = '↑';
         btn.setAttribute('aria-label', '맨 위로');
-        btn.style.cssText = `
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #111;
-            color: #fff;
-            border: 2px solid #111;
-            font-size: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            display: none;
-            box-shadow: 4px 4px 0 #e8a020;
-            z-index: 9999;
-            transition: background .15s, color .15s, transform .1s;
-        `;
+        btn.style.cssText = [
+            'position: fixed',
+            'bottom: 30px',
+            'right: 30px',
+            'width: 48px',
+            'height: 48px',
+            'border-radius: 50%',
+            'background: #111',
+            'color: #fff',
+            'border: 2px solid #111',
+            'font-size: 20px',
+            'font-weight: 700',
+            'cursor: pointer',
+            'opacity: 0',
+            'pointer-events: none',
+            'box-shadow: 4px 4px 0 #e8a020',
+            'z-index: 999999',
+            'transition: opacity .2s, background .15s, color .15s, transform .1s'
+        ].join(';') + ';';
 
         btn.onmouseover = function() {
             this.style.background = '#e8a020';
@@ -205,32 +211,76 @@ st.components.v1.html(
         };
 
         btn.onclick = function() {
-            // 두 가지 스크롤 대상 모두 시도 (Streamlit 환경 호환)
-            window.parent.scrollTo({top: 0, behavior: 'smooth'});
-            const mainEl = parentDoc.querySelector('section.main');
-            if (mainEl) mainEl.scrollTo({top: 0, behavior: 'smooth'});
+            try { window.parent.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
+            const candidates = [
+                '[data-testid="stAppViewContainer"]',
+                '[data-testid="stMain"]',
+                'section.main',
+                '.main' 
+            ];
+            candidates.forEach(sel => {
+                const el = parentDoc.querySelector(sel);
+                if (el && typeof el.scrollTo === 'function') {
+                    try { el.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
+                }
+            });
+            try { parentDoc.documentElement.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
+            try { parentDoc.body.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
         };
 
-        parentDoc.body.appendChild(btn);
+        try {
+            parentDoc.body.appendChild(btn);
+        } catch (e) {
+            return;
+        }
 
-        // 스크롤 감지 핸들러
+        // 스크롤 위치 계산 (여러 컨테이너 중 최댓값)
+        function getScrollY() {
+            const targets = [
+                window.parent,
+                parentDoc.documentElement,
+                parentDoc.body,
+                parentDoc.querySelector('[data-testid="stAppViewContainer"]'),
+                parentDoc.querySelector('[data-testid="stMain"]'),
+                parentDoc.querySelector('section.main'),
+                parentDoc.querySelector('.main')
+            ];
+            let maxY = 0;
+            targets.forEach(t => {
+                if (!t) return;
+                const y = (t === window.parent)
+                    ? (t.scrollY || t.pageYOffset || 0)
+                    : (t.scrollTop || 0);
+                if (y > maxY) maxY = y;
+            });
+            return maxY;
+        }
+
         function toggleBtn() {
-            const y1 = window.parent.scrollY || 0;
-            const mainEl = parentDoc.querySelector('section.main');
-            const y2 = mainEl ? mainEl.scrollTop : 0;
-            const scrolled = Math.max(y1, y2);
-
-            if (scrolled > 300) {
-                btn.style.display = 'block';
+            const y = getScrollY();
+            if (y > 300) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
             } else {
-                btn.style.display = 'none';
+                btn.style.opacity = '0';
+                btn.style.pointerEvents = 'none';
             }
         }
 
-        // 부모 window 및 main 섹션 양쪽에 리스너 등록
-        window.parent.addEventListener('scroll', toggleBtn, true);
-        const mainEl = parentDoc.querySelector('section.main');
-        if (mainEl) mainEl.addEventListener('scroll', toggleBtn);
+        // 모든 후보 컨테이너에 scroll 리스너 등록
+        const scrollTargets = [
+            window.parent,
+            parentDoc,
+            parentDoc.querySelector('[data-testid="stAppViewContainer"]'),
+            parentDoc.querySelector('[data-testid="stMain"]'),
+            parentDoc.querySelector('section.main'),
+            parentDoc.querySelector('.main')
+        ].filter(Boolean);
+
+        scrollTargets.forEach(t => {
+            try { t.addEventListener('scroll', toggleBtn, true); } catch(e) {}
+            try { t.addEventListener('scroll', toggleBtn, false); } catch(e) {}
+        });
 
         // 초기 상태 체크
         toggleBtn();
