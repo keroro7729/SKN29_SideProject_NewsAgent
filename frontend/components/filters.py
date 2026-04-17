@@ -51,5 +51,9 @@ def render_filters(articles: list[dict], key_prefix: str) -> list[dict]:
 
     if sort_by == "조회수순":
         filtered.sort(key=lambda x: x.get("views", 0), reverse=True)
+    
+    else:
+        # '최신순' 또는 기타 예외 상황 시 날짜 기준 내림차순 정렬
+        filtered.sort(key=lambda x: x.get("date", ""), reverse=True)
 
     return filtered
