@@ -1,0 +1,14 @@
+/* =========================================================
+   components/filter_label.css
+   사이드 필터 레이블 텍스트
+   ========================================================= */
+
+.filter-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 6px;
+    display: block;
+}

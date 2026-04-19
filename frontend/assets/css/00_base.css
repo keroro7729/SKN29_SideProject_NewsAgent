@@ -1,0 +1,46 @@
+/* =========================================================
+   00_base.css
+   - Google Fonts import
+   - CSS reset
+   - Streamlit 기본 UI(메뉴/헤더/푸터) 숨김
+   - 전역 타이포 / 배경 / 컨테이너
+   - 스크롤바
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+/* ── 리셋 ─────────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Streamlit 기본 상단 바 제거 ──────────────────────── */
+#MainMenu { visibility: hidden; }
+header    { visibility: hidden; }
+footer    { visibility: hidden; }
+
+/* ── 전역 타이포 ──────────────────────────────────────── */
+html, body, [class*="css"] {
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: #111;
+}
+
+/* ── 앱 배경 ──────────────────────────────────────────── */
+.stApp {
+    background: #f5f3ef;
+    min-height: 100vh;
+}
+
+/* ── 메인 컨테이너 ────────────────────────────────────── */
+.block-container {
+    max-width: 1100px !important;
+    padding: 0 2rem 5rem !important;
+}
+
+/* ── 스크롤바 ─────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 6px; }
+::-webkit-scrollbar-track        { background: #f5f3ef; }
+::-webkit-scrollbar-thumb        { background: #ccc; }
+::-webkit-scrollbar-thumb:hover  { background: #999; }
