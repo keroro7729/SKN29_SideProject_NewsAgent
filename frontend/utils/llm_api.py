@@ -1,5 +1,10 @@
 import os
 import random
+import logging
+import streamlit as st
+
+# 로거 설정
+log = logging.getLogger(__name__)
 
 # ── 더미 응답 풀 ─────────────────────────────────────────────────────────────
 _DUMMY_REPLIES = [
@@ -18,7 +23,7 @@ _DUMMY_REPLIES = [
     "3. 예상 시나리오 및 대응 방향",
 ]
 
-
+@st.cache_resource
 def _get_openai_client():
     """OpenAI 클라이언트를 반환합니다. 실패 시 None."""
     try:
@@ -88,8 +93,12 @@ def chat_with_gpt(
             temperature=0.5,
         )
         return resp.choices[0].message.content.strip()
+    
     except Exception as e:
-        return f"⚠️ API 오류: {e}"
+        # 1. 에러 상세 내용은 터미널(콘솔)에 기록 (디버깅용)
+        log.exception("OpenAI API 호출 중 오류 발생") 
+        # 2. 사용자에게는 안전하고 깔끔한 메시지만 반환
+        return "⚠️ 일시적으로 답변을 받아오지 못했어요. 잠시 후 다시 시도해주세요."
 
 
 def summarize_article(title: str, body: str) -> str:
@@ -124,5 +133,7 @@ def summarize_article(title: str, body: str) -> str:
             temperature=0.3,
         )
         return resp.choices[0].message.content.strip()
+    
     except Exception as e:
-        return f"• 요약 생성 중 오류: {e}"
+        log.exception("요약 생성 실패")
+        return "• 요약 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."

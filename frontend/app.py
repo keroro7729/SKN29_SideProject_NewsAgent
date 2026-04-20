@@ -13,13 +13,12 @@ st.set_page_config(
 )
 
 # ── 모듈 임포트 ───────────────────────────────────────────────────────────────
+from constants         import CATEGORIES, CATEGORY_EMOJI, ARTICLES_PER_PAGE
 from styles.global_css import inject_css
 from data.dummy_news   import get_dummy_news, get_trending_keywords
-import components.tab_news        as tab_news
-import components.tab_social      as tab_social
-import components.tab_economy     as tab_economy
-import components.tab_sports_ent  as tab_sports_ent
-import components.tab_chat        as tab_chat
+import components.tab_news    as tab_news
+import components.tab_generic as tab_generic
+import components.tab_chat    as tab_chat
 
 
 # ── 전역 CSS 주입 ─────────────────────────────────────────────────────────────
@@ -38,11 +37,24 @@ def _init_state() -> None:
         "messages":         [],       # AI 채팅 이력
         "selected_article": None,     # 채팅 컨텍스트로 넘길 기사
         "input_key":        0,        # 채팅 입력창 초기화용 카운터
-        "active_category":  "전체",   # 현재 선택된 카테고리 탭
+        "active_category":  CATEGORIES[0],   # 현재 선택된 카테고리 탭
+        "used_suggestions": set(),    # 이미 클릭한 추천 질문 텍스트 집합
     }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
+
+    # 카테고리별 "현재 표시 중인 기사 수" 초기화 (더보기 버튼용)
+    for cat in CATEGORIES:
+        key = f"visible_count_{cat}"
+        if key not in st.session_state:
+            st.session_state[key] = ARTICLES_PER_PAGE
+
+
+def _reset_visible_counts() -> None:
+    """모든 카테고리의 표시 개수를 기본값으로 리셋합니다 (검색/필터 변경 시)."""
+    for cat in CATEGORIES:
+        st.session_state[f"visible_count_{cat}"] = ARTICLES_PER_PAGE
 
 _init_state()
 
@@ -65,32 +77,35 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# ── 검색창 ────────────────────────────────────────────────────────────────────
-col_q, col_btn = st.columns([5, 1])
+# ── 검색창 (form으로 감싸 엔터키 지원) ────────────────────────────────────────
+with st.form(key="search_form", clear_on_submit=False):
+    col_q, col_btn = st.columns([5, 1])
 
-with col_q:
-    query_input = st.text_input(
-        label="검색",
-        placeholder="검색어를 입력하세요  (예: 인공지능, 반도체, 손흥민, BTS)",
-        key="search_input",
-        label_visibility="collapsed",
-    )
+    with col_q:
+        query_input = st.text_input(
+            label="검색",
+            placeholder="검색어를 입력하세요  (예: 인공지능, 반도체, 손흥민, BTS)",
+            key="search_input",
+            label_visibility="collapsed",
+        )
 
-with col_btn:
-    search_clicked = st.button("검색", use_container_width=True)
+    with col_btn:
+        search_clicked = st.form_submit_button("검색", use_container_width=True)
 
-# 검색 실행: 버튼 클릭 또는 엔터 (input 값 변경 감지)
+# 검색 실행: 버튼 클릭 또는 엔터키 (form_submit_button이 둘 다 처리)
 if search_clicked and query_input.strip():
     st.session_state.query            = query_input.strip()
     st.session_state.news_list        = []
     st.session_state.selected_article = None
+    st.session_state.used_suggestions = set()   # 새 검색 → 추천 질문 리셋
+    _reset_visible_counts()   # 새 검색 → 모든 탭 페이지 상태 리셋
 
     with st.spinner("뉴스를 불러오는 중…"):
         # ─ 실제 API/DB 연동 시 이 라인만 교체 ─
         # from data.naver_api import fetch_news
         # st.session_state.news_list = fetch_news(st.session_state.query)
         st.session_state.news_list = get_dummy_news(
-            category="전체",
+            category=CATEGORIES[0],
             query=st.session_state.query,
         )
 
@@ -99,7 +114,7 @@ st.markdown('<div class="ni-rule"></div>', unsafe_allow_html=True)
 
 # ── 빈 상태: 검색 전 화면 ─────────────────────────────────────────────────────
 if not st.session_state.query:
-    hot_keywords = get_trending_keywords("전체")
+    hot_keywords = get_trending_keywords(CATEGORIES[0])
 
     # 인기 검색어 pill 태그 (HTML 렌더링)
     pills_html = "".join(
@@ -117,8 +132,10 @@ if not st.session_state.query:
     for i, (col, kw) in enumerate(zip(btn_cols, hot_keywords)):
         with col:
             if st.button(kw, key=f"hot_{i}", use_container_width=True):
-                st.session_state.query     = kw
-                st.session_state.news_list = get_dummy_news(category="전체", query=kw)
+                st.session_state.query            = kw
+                st.session_state.news_list        = get_dummy_news(category=CATEGORIES[0], query=kw)
+                st.session_state.used_suggestions = set()   # 핫 키워드 클릭 → 추천 질문 리셋
+                _reset_visible_counts()   # 핫 키워드 클릭 → 페이지 상태 리셋
                 st.rerun()
 
     # 안내 문구
@@ -131,59 +148,161 @@ if not st.session_state.query:
 
 
 # ── 카테고리 탭 ───────────────────────────────────────────────────────────────
-# 탭 순서: 전체뉴스 / 사회 / 경제 / 스포츠 / 연예 / AI 채팅
-tabs = st.tabs(["📋 전체뉴스", "🏛️ 사회", "📈 경제", "⚽ 스포츠", "🎬 연예", "🤖 AI 채팅"])
-
-TAB_CATEGORIES = ["전체", "사회", "경제", "스포츠", "연예"]
-
+tab_labels = [f"{CATEGORY_EMOJI[c]} {c}" for c in CATEGORIES]
+tabs = st.tabs(tab_labels)
 
 # ── 탭별 기사 로딩 ────────────────────────────────────────────────────────────
 def _load(category: str) -> list[dict]:
-    """
-    카테고리에 맞는 기사 리스트를 반환합니다.
-    전체 탭은 session_state.news_list 를 그대로 사용하고,
-    나머지 탭은 해당 카테고리만 필터링해 반환합니다.
-    """
-    if category == "전체":
+    if category == CATEGORIES[0]: # "전체"
         return st.session_state.news_list
-
-    # 더미 데이터에서 해당 카테고리 기사를 별도로 가져옵니다.
-    # 실제 API 연동 시 DB 쿼리로 교체하세요.
     return get_dummy_news(category=category, query="")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 탭 0: 전체 뉴스
-# ══════════════════════════════════════════════════════════════════════════════
 with tabs[0]:
-    tab_news.render(_load("전체"))
+    tab_news.render(_load(CATEGORIES[0]))
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 1: 사회
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[1]:
-    tab_social.render(_load("사회"))
+# 탭 1~5: 사회 / 경제 / 스포츠 / 엔터 / IT/과학
+for i in range(1, 6):
+    with tabs[i]:
+        tab_generic.render(_load(CATEGORIES[i]), category=CATEGORIES[i])
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 2: 경제
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[2]:
-    tab_economy.render(_load("경제"))
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 3: 스포츠
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[3]:
-    tab_sports_ent.render(_load("스포츠"), category="스포츠")
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 4: 연예
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[4]:
-    tab_sports_ent.render(_load("연예"), category="연예")
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 탭 5: AI 채팅
-# ══════════════════════════════════════════════════════════════════════════════
-with tabs[5]:
+# 탭 6: AI 채팅
+with tabs[6]:
     tab_chat.render()
+
+
+# ── 맨 위로 가기 버튼 ─────────────────────────────────────────────────────────
+st.components.v1.html(
+    """
+    <script>
+    (function() {
+        let parentDoc;
+        try {
+            parentDoc = window.parent.document;
+        } catch (e) {
+            return;
+        }
+
+        // 기존 버튼 제거 (리런 대비)
+        const oldBtn = parentDoc.getElementById('scrollTopBtn');
+        if (oldBtn) oldBtn.remove();
+
+        // 버튼 생성
+        const btn = parentDoc.createElement('button');
+        btn.id = 'scrollTopBtn';
+        btn.innerHTML = '↑';
+        btn.setAttribute('aria-label', '맨 위로');
+        btn.style.cssText = [
+            'position: fixed',
+            'bottom: 30px',
+            'right: 30px',
+            'width: 48px',
+            'height: 48px',
+            'border-radius: 50%',
+            'background: #111',
+            'color: #fff',
+            'border: 2px solid #111',
+            'font-size: 20px',
+            'font-weight: 700',
+            'cursor: pointer',
+            'opacity: 0',
+            'pointer-events: none',
+            'box-shadow: 4px 4px 0 #e8a020',
+            'z-index: 999999',
+            'transition: opacity .2s, background .15s, color .15s, transform .1s'
+        ].join(';') + ';';
+
+        btn.onmouseover = function() {
+            this.style.background = '#e8a020';
+            this.style.color = '#111';
+            this.style.borderColor = '#e8a020';
+            this.style.transform = 'translate(-1px,-1px)';
+        };
+        btn.onmouseout = function() {
+            this.style.background = '#111';
+            this.style.color = '#fff';
+            this.style.borderColor = '#111';
+            this.style.transform = 'translate(0,0)';
+        };
+
+        btn.onclick = function() {
+            try { window.parent.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
+            const candidates = [
+                '[data-testid="stAppViewContainer"]',
+                '[data-testid="stMain"]',
+                'section.main',
+                '.main' 
+            ];
+            candidates.forEach(sel => {
+                const el = parentDoc.querySelector(sel);
+                if (el && typeof el.scrollTo === 'function') {
+                    try { el.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
+                }
+            });
+            try { parentDoc.documentElement.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
+            try { parentDoc.body.scrollTo({top: 0, behavior: 'smooth'}); } catch(e) {}
+        };
+
+        try {
+            parentDoc.body.appendChild(btn);
+        } catch (e) {
+            return;
+        }
+
+        // 스크롤 위치 계산 (여러 컨테이너 중 최댓값)
+        function getScrollY() {
+            const targets = [
+                window.parent,
+                parentDoc.documentElement,
+                parentDoc.body,
+                parentDoc.querySelector('[data-testid="stAppViewContainer"]'),
+                parentDoc.querySelector('[data-testid="stMain"]'),
+                parentDoc.querySelector('section.main'),
+                parentDoc.querySelector('.main')
+            ];
+            let maxY = 0;
+            targets.forEach(t => {
+                if (!t) return;
+                const y = (t === window.parent)
+                    ? (t.scrollY || t.pageYOffset || 0)
+                    : (t.scrollTop || 0);
+                if (y > maxY) maxY = y;
+            });
+            return maxY;
+        }
+
+        function toggleBtn() {
+            const y = getScrollY();
+            if (y > 300) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            } else {
+                btn.style.opacity = '0';
+                btn.style.pointerEvents = 'none';
+            }
+        }
+
+        // 모든 후보 컨테이너에 scroll 리스너 등록
+        const scrollTargets = [
+            window.parent,
+            parentDoc,
+            parentDoc.querySelector('[data-testid="stAppViewContainer"]'),
+            parentDoc.querySelector('[data-testid="stMain"]'),
+            parentDoc.querySelector('section.main'),
+            parentDoc.querySelector('.main')
+        ].filter(Boolean);
+
+        scrollTargets.forEach(t => {
+            try { t.addEventListener('scroll', toggleBtn, true); } catch(e) {}
+            try { t.addEventListener('scroll', toggleBtn, false); } catch(e) {}
+        });
+
+        // 초기 상태 체크
+        toggleBtn();
+    })();
+    </script>
+    """,
+    height=0,
+)

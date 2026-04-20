@@ -25,4 +25,3 @@ def startup():
     from app.model import agent_session, message, news_model  # noqa: F401
     init_db()
 
-

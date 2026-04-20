@@ -1,0 +1,40 @@
+/* =========================================================
+   10_layout.css
+   - 상단 헤더 (로고 / 메타)
+   - 구분선
+   ========================================================= */
+
+/* ── 헤더 ─────────────────────────────────────────────── */
+.ni-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 1.4rem 0 1rem;
+    border-bottom: 3px solid #111;
+    margin-bottom: 1.5rem;
+}
+
+.ni-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.3rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: #111;
+    line-height: 1;
+}
+
+.ni-meta {
+    font-size: 15px;
+    color: #888;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: right;
+    line-height: 1.6;
+}
+
+/* ── 구분선 ───────────────────────────────────────────── */
+.ni-rule {
+    height: 1px;
+    background: #ddd9d2;
+    margin: 1.5rem 0;
+}
