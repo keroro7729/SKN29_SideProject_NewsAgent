@@ -39,6 +39,5 @@ def get_db():
 
 
 def init_db():
-    """앱 시작 시 테이블 생성"""
-    #Base.metadata.create_all(bind=engine)
-    print(DB_HOST, DB_PORT)
+    """ 초기화 작업 추가 예정 """
+    pass

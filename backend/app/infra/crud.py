@@ -71,7 +71,6 @@ def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
     - article_url 기준 중복 스킵
     - 빈 article_url 스킵
     """
-    # NewsItem (단순 dict) -> News (orm 모델)로 변환한다는 설명이 추가되면 좋을거 같습니다.
     if not items:
         return []
 
@@ -84,8 +83,7 @@ def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
         if item.get("article_url")
     }
 
-    # 기존 URL 한 번에 조회 
-    # # 중복된, 이미 존재하는 urls 조회
+    # 중복된, 이미 존재하는 urls 조회
     existing_urls = {
         row[0]
         for row in db.query(News.article_url)
@@ -120,7 +118,7 @@ def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
         db.commit()
 
         for news in saved:
-            db.refresh(news) # refresh가 성능 살짝 있다고 하네요, 수정할필요는 없음, 알아두면 좋음
+            db.refresh(news)
 
         return saved
 
@@ -129,7 +127,7 @@ def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
         raise
 
 
-# fill_detail... 요약 뿐만아니라, 대분류 카테고리, 태그 ai가 분석해서 추가해주는 결과물 바로 주입, 완성시켜주는 메서드면 더 좋을거 같습니다
+
 def save_summary_result(db: Session, article_id: int, summary: str) -> News | None:
     """
     요약 결과 저장

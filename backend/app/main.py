@@ -24,7 +24,5 @@ def startup():
     from app.infra.db import Base, engine
     from app.model import agent_session, message, news_model  # noqa: F401
     init_db()
-    # Base.metadata.create_all(bind=engine) # db에 기능 있음
-    # 테이블 자동 생성기능. 편리하지만 주의해야할 점이 많은 기능임
 
 
