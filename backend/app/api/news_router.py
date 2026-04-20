@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.infra.db import get_db
-from app.infra.crud import create_news_articles, get_news_by_article_url
+from app.infra.crud import create_news, get_news_by_article_url
 from app.service.news_service import search_and_prepare_news_for_agent, to_news_entity
 from app.model.news_model import NewsSearchResponse
 from app.service.news_refine_service import NewsRefineService
@@ -23,7 +23,6 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
     result: NewsSearchResponse = search_and_prepare_news_for_agent(query=query, target_count=count)
     items = result.get("items", [])
 
-    # 
     news_models = []
     refiner = NewsRefineService()
     for item in items:
@@ -34,13 +33,13 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
         item['tags'] = news_summary.tags
         news_models.append(to_news_entity(item, db=db))
 
-
-    saved = create_news_articles(db=db, items=items)
+    db.flush()
+    saved = create_news(db=db, news_list=news_models)
 
     return {
         "query": result.get("query"),
         "fetched": len(items),
-        "saved": len(saved),
+        "saved": saved,
     }
 
 

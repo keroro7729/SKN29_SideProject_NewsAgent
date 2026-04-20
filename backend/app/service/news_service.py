@@ -70,7 +70,7 @@ def enrich_news_item(raw_item: dict) -> dict:
     crawled = crawl_article(article_url)
     full_content = crawled["full_content"]
 
-    return {
+    result = {
         "title": clean_text(raw_item.get("title", "")),
         "article_url": article_url,
         "published_at": parse_pub_date(raw_item.get("pubDate")),
@@ -81,6 +81,8 @@ def enrich_news_item(raw_item: dict) -> dict:
         "error_message": crawled["error_message"],
         "content_length": len(full_content),
     }
+    print('크롤링 결과: ', result)
+    return result
 
 
 def filter_valid_articles_for_summary(

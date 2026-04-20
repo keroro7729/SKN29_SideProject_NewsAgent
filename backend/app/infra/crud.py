@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import select
 from app.model.agent_session import AgentSession
 from app.model.message import Message
 from datetime import datetime
@@ -55,9 +56,9 @@ def get_messages_by_session(
         .all() # pagenation 고려
     )
 
-
-
-
+# ------------------------
+# News
+# ------------------------
 
 
 def get_news_by_article_url(db: Session, article_url: str) -> News | None:
@@ -65,85 +66,27 @@ def get_news_by_article_url(db: Session, article_url: str) -> News | None:
         return None
     return db.query(News).filter(News.article_url == article_url).first()
 
-def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
-    """
-    뉴스 여러 건 저장
-    - article_url 기준 중복 스킵
-    - 빈 article_url 스킵
-    """
-    if not items:
-        return []
+def get_news_by_id(db: Session, id: int) -> News | None:
+    return db.query(News).filter(News.id == id).first()
 
-    saved: list[News] = []
+def create_news(db: Session, news_list: list[News]) -> int:
+    if not news_list:
+        return 0
 
-    # 입력 데이터에서 유효한 URL만 추출
-    article_urls = {
-        item.get("article_url", "").strip()
-        for item in items
-        if item.get("article_url")
-    }
+    urls = [n.article_url for n in news_list]
 
-    # 중복된, 이미 존재하는 urls 조회
-    existing_urls = {
-        row[0]
-        for row in db.query(News.article_url)
-        .filter(News.article_url.in_(article_urls))
-        .all()
-    }
+    existing_urls = set(
+        db.execute(
+            select(News.article_url).where(News.article_url.in_(urls))
+        ).scalars().all()
+    )
 
-    try:
-        for item in items:
-            article_url = item.get("article_url", "").strip()
-            if not article_url:
-                continue
+    filtered = [n for n in news_list if n.article_url not in existing_urls]
 
-            if article_url in existing_urls:
-                continue
+    if not filtered:
+        return 0
 
-            news = News(
-                title=item.get("title", ""),
-                full_content=item.get("full_content"),
-                article_url=article_url,
-                image_url=item.get("image_url"),
-                summary=item.get("summary"),
-                #crawl_status=item.get("crawl_status", "pending"),
-                #summary_status=item.get("summary_status", "pending"),
-                #error_message=item.get("error_message"),
-                published_at=item.get("published_at"),
-            )
-            db.add(news)
-            saved.append(news)
-            existing_urls.add(article_url)
+    db.add_all(filtered)
+    db.commit()
 
-        db.commit()
-
-        for news in saved:
-            db.refresh(news)
-
-        return saved
-
-    except SQLAlchemyError:
-        db.rollback()
-        raise
-
-
-
-def save_summary_result(db: Session, article_id: int, summary: str) -> News | None:
-    """
-    요약 결과 저장
-    """
-    news = db.query(News).filter(News.id == article_id).first()
-    if not news:
-        return None
-
-    try:
-        news.summary = summary
-        # news.summary_status = "success"
-        db.commit()
-        db.refresh(news)
-        return news
-
-    except SQLAlchemyError:
-        db.rollback()
-        raise
-
+    return len(filtered)

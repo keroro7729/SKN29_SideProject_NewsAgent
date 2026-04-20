@@ -26,8 +26,5 @@ class NewsRefineService:
                 "news_content": news_content,
             }
         )
-
-        print(news_content)
-        print(result)
         
         return result
