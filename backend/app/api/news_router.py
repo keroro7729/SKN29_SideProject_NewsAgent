@@ -11,7 +11,6 @@ router = APIRouter(
     tags=["news"],
 )
 
-
 @router.post("/search", response_model=None)
 def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_db)):
     """
@@ -32,6 +31,8 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
     }
 
 
+# 기사 url을 키 같이 사용하기로 했나본데? 괜찮은데? 아주 좋습니다.
+# 단건 조회 미리 만들어둔것도 좋은거 같습니다.
 @router.get("/{article_url:path}")
 def get_news(article_url: str, db: Session = Depends(get_db)):
     """

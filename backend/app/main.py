@@ -23,6 +23,6 @@ def startup():
     # model import가 여기서 이루어져야 순환 참조 없음
     from app.infra.db import Base, engine
     from app.model import agent_session, message, news_model  # noqa: F401
-    Base.metadata.create_all(bind=engine)
+    init_db()
 
 

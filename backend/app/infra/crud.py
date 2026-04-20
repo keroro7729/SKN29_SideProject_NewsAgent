@@ -59,9 +59,6 @@ def get_messages_by_session(
 
 
 
-#######################################################################################
-# crawling
-#######################################################################################
 
 def get_news_by_article_url(db: Session, article_url: str) -> News | None:
     if not article_url:
@@ -86,7 +83,7 @@ def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
         if item.get("article_url")
     }
 
-    # 기존 URL 한 번에 조회
+    # 중복된, 이미 존재하는 urls 조회
     existing_urls = {
         row[0]
         for row in db.query(News.article_url)
@@ -128,6 +125,7 @@ def create_news_articles(db: Session, items: list[NewsItem]) -> list[News]:
     except SQLAlchemyError:
         db.rollback()
         raise
+
 
 
 def save_summary_result(db: Session, article_id: int, summary: str) -> News | None:
