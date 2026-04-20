@@ -8,7 +8,7 @@ class NewsSummary(BaseModel):
     summary: str = Field(description="기사 내용 요약")
     tags: List[str] = Field(description="기사 내용의 핵심 키워드 3~5개")
 
-class ChatBotService:
+class NewsRefineService:
     def __init__(self):
         self.llm = ChatOpenAI(temperature=0, model_name="gpt-4.1-mini")
         self.structured_llm = self.llm.with_structured_output(NewsSummary)
@@ -20,11 +20,14 @@ class ChatBotService:
         self.chain = self.prompt | self.structured_llm
         
     # 답변 결과 생성
-    def response(self, content):
+    def get_summary_category(self, news_content) -> NewsSummary:
         result = self.chain.invoke(
             {
-                "news_content": content,
+                "news_content": news_content,
             }
         )
+
+        print(news_content)
+        print(result)
         
         return result

@@ -3,7 +3,16 @@
 from typing import TypedDict
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from datetime import datetime, timezone
+from sqlalchemy import Table, ForeignKey
+from sqlalchemy.orm import relationship
 from app.infra.db import Base
+
+news_tags = Table(
+    "news_tags",
+    Base.metadata,
+    Column("news_id", ForeignKey("news.id"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id"), primary_key=True),
+)
 
 # ORM 모델
 class News(Base):
@@ -14,13 +23,22 @@ class News(Base):
     full_content = Column(Text, nullable=True)
     article_url = Column(String(1000), nullable=False, unique=True)
     image_url = Column(Text, nullable=True)
+
     summary = Column(Text, nullable=True)
-    # 카테고리 태그(list)도 추가 + list 속성은 orm에서 어떻게 처리돼서 db에는 어떻게 될까?
-    # crawl_status = Column(String(20), default="pending")
-    # error_message = Column(Text, nullable=True)
+    category = Column(String(10), nullable=True)
+    tags = relationship("Tag", secondary=news_tags, backref="news")
+
     published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+    # crawl_status = Column(String(20), default="pending")
+    # error_message = Column(Text, nullable=True)
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), unique=True)
 
 class NewsItem(TypedDict, total=False):
     title: str
@@ -35,8 +53,9 @@ class NewsItem(TypedDict, total=False):
     #summary_status: str
     #error_message: str
 
-    summary_input: str          # 요약 모델 입력용 텍스트
     summary: str                # LLM 요약 결과
+    category: str
+    tags: list[str]
 
 
 class NewsSearchResponse(TypedDict, total=False):

@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from app.config import NAVER_CLIENT_ID, NAVER_CLIENT_SECRET
 from app.infra.naver_client import NaverNewsClient
 from app.service.crawl_service import clean_text, crawl_article
+from app.model.news_model import NewsItem, News, Tag
 
 _naver: NaverNewsClient | None = None
 
@@ -16,13 +17,44 @@ def _get_naver_client() -> NaverNewsClient:
     return _naver
 
 
-def build_summary_input(title: str, content: str) -> str:
-    title = clean_text(title)
-    content = clean_text(content)
-    if not content:
-        return f"제목: {title}\n본문:"
-    return f"제목: {title}\n본문:\n{content}"
+def to_news_entity(item: NewsItem, db) -> News:
+    news = News(
+        title=item["title"],
+        full_content=item["full_content"],
+        article_url=item["article_url"],
+        image_url=item["image_url"],
+        summary=item.get("summary"),
+        category=item.get("category"),
+    )
 
+    news.tags = get_or_create_tags(db, item.get("tags", []))
+    return news
+
+def get_or_create_tags(db, tag_names: list[str]) -> list[Tag]:
+    if not tag_names:
+        return []
+    
+    # 1. 이미 존재하는 태그 조회
+    existing_tags = db.query(Tag).filter(Tag.name.in_(tag_names)).all()
+    existing_map = {tag.name: tag for tag in existing_tags}
+
+    result = []
+    new_tags_added = False
+    
+    for name in set(tag_names):
+        if name in existing_map:
+            result.append(existing_map[name])
+        else:
+            tag = Tag(name=name)
+            db.add(tag)
+            result.append(tag)
+            new_tags_added = True
+
+    # 2. 새로 추가된 태그가 있다면 flush해서 DB 세션에 상태를 동기화
+    if new_tags_added:
+        db.flush() 
+
+    return result
 
 def parse_pub_date(pub_date: str | None) -> datetime | None:
     if not pub_date:
@@ -48,10 +80,6 @@ def enrich_news_item(raw_item: dict) -> dict:
         "crawl_status": crawled["crawl_status"],
         "error_message": crawled["error_message"],
         "content_length": len(full_content),
-        "summary_input": build_summary_input(
-            title=raw_item.get("title", ""),
-            content=full_content,
-        ),
     }
 
 

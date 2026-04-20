@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.infra.db import get_db
 from app.infra.crud import create_news_articles, get_news_by_article_url
-from app.service.news_service import search_and_prepare_news_for_agent
+from app.service.news_service import search_and_prepare_news_for_agent, to_news_entity
 from app.model.news_model import NewsSearchResponse
+from app.service.news_refine_service import NewsRefineService
 
 router = APIRouter(
     prefix="/news",
@@ -22,6 +23,18 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
     result: NewsSearchResponse = search_and_prepare_news_for_agent(query=query, target_count=count)
     items = result.get("items", [])
 
+    # 
+    news_models = []
+    refiner = NewsRefineService()
+    for item in items:
+        input = item.get('title') + '\n' + item.get('full_content')
+        news_summary = refiner.get_summary_category(input)
+        item['summary'] = news_summary.summary
+        item['category'] = news_summary.category
+        item['tags'] = news_summary.tags
+        news_models.append(to_news_entity(item, db=db))
+
+
     saved = create_news_articles(db=db, items=items)
 
     return {
@@ -31,8 +44,6 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
     }
 
 
-# 기사 url을 키 같이 사용하기로 했나본데? 괜찮은데? 아주 좋습니다.
-# 단건 조회 미리 만들어둔것도 좋은거 같습니다.
 @router.get("/{article_url:path}")
 def get_news(article_url: str, db: Session = Depends(get_db)):
     """

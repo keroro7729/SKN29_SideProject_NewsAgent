@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS news (
     article_url VARCHAR(1000) NOT NULL,
     image_url VARCHAR(1000) NULL,
     summary TEXT NULL,
+    category VARCHAR(10) NULL,
+    
     crawl_status VARCHAR(20) NOT NULL DEFAULT 'pending',
     summary_status VARCHAR(20) NOT NULL DEFAULT 'pending',
     error_message TEXT NULL,
@@ -42,6 +44,18 @@ CREATE TABLE IF NOT EXISTS news (
     CONSTRAINT uq_news_article_url UNIQUE (article_url)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(50) UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS news_tags (
+    news_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (news_id, tag_id),
+    FOREIGN KEY (news_id) REFERENCES news(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
+);
 -- ------------------------
 -- index (성능)
 -- ------------------------
