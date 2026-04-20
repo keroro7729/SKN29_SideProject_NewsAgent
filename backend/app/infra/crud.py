@@ -66,6 +66,9 @@ def get_news_by_article_url(db: Session, article_url: str) -> News | None:
         return None
     return db.query(News).filter(News.article_url == article_url).first()
 
+def get_news_list_by_category(db: Session, category: str) -> list[News]:
+    return db.query(News).filter(News.category == category).all()
+
 def get_news_by_id(db: Session, id: int) -> News | None:
     return db.query(News).filter(News.id == id).first()
 
@@ -89,4 +92,4 @@ def create_news(db: Session, news_list: list[News]) -> int:
     db.add_all(filtered)
     db.commit()
 
-    return len(filtered)
+    return filtered

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.infra.db import get_db
-from app.infra.crud import create_news, get_news_by_article_url
+from app.infra.crud import create_news, get_news_by_article_url, get_news_list_by_category
 from app.service.news_service import search_and_prepare_news_for_agent, to_news_entity
 from app.model.news_model import NewsSearchResponse
 from app.service.news_refine_service import NewsRefineService
@@ -15,7 +15,7 @@ router = APIRouter(
 @router.post("/search", response_model=None)
 def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_db)):
     """
-    뉴스 검색 + 크롤링 + DB 저장
+    뉴스 검색 + 크롤링 + 요약, 카테고리, 태그 추가 + DB 저장
     """
     if not query.strip():
         raise HTTPException(status_code=400, detail="query를 입력해주세요.")
@@ -33,15 +33,12 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
         item['tags'] = news_summary.tags
         news_models.append(to_news_entity(item, db=db))
 
-    db.flush()
-    saved = create_news(db=db, news_list=news_models)
+    saved_models = create_news(db=db, news_list=news_models)
+    return saved_models # 그대로
 
-    return {
-        "query": result.get("query"),
-        "fetched": len(items),
-        "saved": saved,
-    }
-
+@router.get("")
+def get_news(category: str, db: Session = Depends(get_db)):
+    return get_news_list_by_category(db, category)
 
 @router.get("/{article_url:path}")
 def get_news(article_url: str, db: Session = Depends(get_db)):
@@ -52,3 +49,4 @@ def get_news(article_url: str, db: Session = Depends(get_db)):
     if not news:
         raise HTTPException(status_code=404, detail="해당 뉴스를 찾을 수 없습니다.")
     return news
+
