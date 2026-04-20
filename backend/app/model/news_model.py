@@ -1,5 +1,3 @@
-# 네이밍 news_models.py 복수형도 괜찮을거 같네요
-
 from typing import TypedDict
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from datetime import datetime, timezone
