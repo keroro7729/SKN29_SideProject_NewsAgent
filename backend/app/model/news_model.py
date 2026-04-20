@@ -29,8 +29,9 @@ class News(Base):
     published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # crawl_status = Column(String(20), default="pending")
-    # error_message = Column(Text, nullable=True)
+    crawl_status = Column(String(20), default="pending")
+    summary_status = Column(String(20), default="pending")
+    error_message = Column(Text, nullable=True)
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -47,9 +48,9 @@ class NewsItem(TypedDict, total=False):
     image_url: str
     content_length: int
 
-    #crawl_status: str
-    #summary_status: str
-    #error_message: str
+    crawl_status: str
+    summary_status: str
+    error_message: str
 
     summary: str                # LLM 요약 결과
     category: str

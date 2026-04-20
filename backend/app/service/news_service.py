@@ -1,5 +1,4 @@
 from datetime import datetime
-from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List
 
 from app.config import NAVER_CLIENT_ID, NAVER_CLIENT_SECRET
@@ -25,6 +24,10 @@ def to_news_entity(item: NewsItem, db) -> News:
         image_url=item["image_url"],
         summary=item.get("summary"),
         category=item.get("category"),
+        crawl_status=item["crawl_status"],
+        summary_status=item["summary_status"],
+        error_message=item["error_message"],
+        published_at=item["published_at"]
     )
 
     news.tags = get_or_create_tags(db, item.get("tags", []))
@@ -60,7 +63,8 @@ def parse_pub_date(pub_date: str | None) -> datetime | None:
     if not pub_date:
         return None
     try:
-        return parsedate_to_datetime(pub_date)
+        pub_date = pub_date.replace("오전", "AM").replace("오후", "PM")
+        return str(datetime.strptime(pub_date, "%Y.%m.%d. %p %I:%M"))
     except Exception:
         return None
 
@@ -73,7 +77,7 @@ def enrich_news_item(raw_item: dict) -> dict:
     result = {
         "title": clean_text(raw_item.get("title", "")),
         "article_url": article_url,
-        "published_at": parse_pub_date(raw_item.get("pubDate")),
+        "published_at": parse_pub_date(crawled.get("published_at")),
         "full_content": full_content,
         "image_url": crawled["image_url"],
         "summary": None,
@@ -81,7 +85,6 @@ def enrich_news_item(raw_item: dict) -> dict:
         "error_message": crawled["error_message"],
         "content_length": len(full_content),
     }
-    print('크롤링 결과: ', result)
     return result
 
 
@@ -129,7 +132,6 @@ def search_and_prepare_news_for_agent(
         start += chunk_size
 
     enriched_items = [enrich_news_item(item) for item in collected_items[:target_count]]
-
     return {
         "query": query,
         "display": len(enriched_items),

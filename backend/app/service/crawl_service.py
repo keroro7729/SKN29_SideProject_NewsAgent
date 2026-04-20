@@ -42,7 +42,13 @@ def parse_naver_news(html_text: str) -> dict[str, str]:
     if article_tag:
         for tag in article_tag.select(".img_desc, script, style"):
             tag.decompose()
-        full_content = clean_text(article_tag.get_text(separator="\n", strip=True))
+        full_content = clean_text(article_tag.get_text(separator="\n", strip=True)).replace('<b>','').replace('</b>','')
+        
+    date_tag = soup.select_one("span.media_end_head_info_datestamp_time._ARTICLE_DATE_TIME")
+    
+    published_at = ""
+    if date_tag:
+        published_at = date_tag.get_text(strip=True)
 
     # 이미지: id=img1 우선, 없으면 og:image
     img_tag = soup.find("img", id="img1")
@@ -57,7 +63,7 @@ def parse_naver_news(html_text: str) -> dict[str, str]:
         og = soup.find("meta", property="og:image")
         image_url = og["content"] if og and og.get("content") else ""
 
-    return {"full_content": full_content, "image_url": image_url}
+    return {"full_content": full_content, "image_url": image_url, "published_at": published_at}
 
 
 def crawl_article(article_url: str) -> dict[str, str]:
@@ -71,11 +77,13 @@ def crawl_article(article_url: str) -> dict[str, str]:
     try:
         parsed = parse_naver_news(fetch_html(article_url))
         full_content = parsed["full_content"]
+        published_at = parsed["published_at"]
         return {
             "full_content": full_content,
             "image_url": parsed["image_url"],
             "crawl_status": "success" if full_content else "failed",
             "error_message": "" if full_content else "본문 추출 실패",
+            "published_at": published_at
         }
     except Exception as e:
         return {
@@ -83,4 +91,6 @@ def crawl_article(article_url: str) -> dict[str, str]:
             "image_url": "",
             "crawl_status": "failed",
             "error_message": str(e),
+            "published_at": ""
         }
+

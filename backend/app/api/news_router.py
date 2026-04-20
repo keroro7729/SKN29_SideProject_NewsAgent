@@ -27,12 +27,21 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
     refiner = NewsRefineService()
     for item in items:
         input = item.get('title') + '\n' + item.get('full_content')
-        news_summary = refiner.get_summary_category(input)
-        item['summary'] = news_summary.summary
-        item['category'] = news_summary.category
-        item['tags'] = news_summary.tags
+        try:
+            news_summary = refiner.get_summary_category(input)
+            item['summary'] = news_summary.summary
+            item['category'] = news_summary.category
+            item['tags'] = news_summary.tags
+            item['summary_status'] = 'success'
+        except:
+            item['summary'] = ''
+            item['category'] = ''
+            item['tags'] = ''
+            item['summary_status'] = 'failed'
+            
         news_models.append(to_news_entity(item, db=db))
 
+    # create_news에서 0을 반환할 때 별도 로직 필요
     saved_models = create_news(db=db, news_list=news_models)
     return [
         {
@@ -43,6 +52,9 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
             "tags": news.tags,
             "article_url": news.article_url,
             "image_url": news.image_url,
+            "crawl_status": news.crawl_status,
+            "published_at": news.published_at,
+            "error_message": news.error_message
         }
         for news in saved_models
     ]

@@ -14,7 +14,7 @@ class NewsRefineService:
         self.structured_llm = self.llm.with_structured_output(NewsSummary)
         self.prompt = PromptTemplate.from_template(
             "다음에 오는 기사 내용을 분석해 주세요\n\n {news_content}"
-            "카테고리는 사회, 경제, 연예, 스포츠 중에서만 답변하고 이 외의 답변은 하지 말 것"
+            "카테고리는 '사회', '경제', '엔터', '스포츠', 'IT/과학' 중에서만 답변하고 이 외의 답변은 하지 말 것"
             "기사 내용 요약은 5문장 이내로 할 것"
         )
         self.chain = self.prompt | self.structured_llm
