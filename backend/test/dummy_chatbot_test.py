@@ -1,8 +1,8 @@
 # 테스트 용도로 작성한 코드
 # 일단 dummy_news를 사용하였지만, 추후에 db 연동할 계획
 
-from chatbot_service import ChatBotService
-from dummy_news import get_dummy_news, get_trending_keywords
+from app.service.chatbot_service import ChatBotService
+from test.dummy_news import get_dummy_news, get_trending_keywords
 from dotenv import load_dotenv
 load_dotenv()
 

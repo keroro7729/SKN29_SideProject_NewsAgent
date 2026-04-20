@@ -35,6 +35,3 @@ htmlcov/
 
 # FastAPI 실행 캐시
 *.db
-
-# 나의 개인 파일
-shprivate*
