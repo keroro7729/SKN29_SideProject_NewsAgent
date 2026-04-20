@@ -72,7 +72,7 @@ def get_news_list_by_category(db: Session, category: str) -> list[News]:
 def get_news_by_id(db: Session, id: int) -> News | None:
     return db.query(News).filter(News.id == id).first()
 
-def create_news(db: Session, news_list: list[News]) -> int:
+def create_news(db: Session, news_list: list[News]) -> list[News]:
     if not news_list:
         return 0
 

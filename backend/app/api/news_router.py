@@ -34,7 +34,18 @@ def search_and_save_news(query: str, count: int = 10, db: Session = Depends(get_
         news_models.append(to_news_entity(item, db=db))
 
     saved_models = create_news(db=db, news_list=news_models)
-    return saved_models # 그대로
+    return [
+        {
+            "title": news.title,
+            "category": news.category,
+            "full_content": news.full_content,
+            "summary": news.summary,
+            "tags": news.tags,
+            "article_url": news.article_url,
+            "image_url": news.image_url,
+        }
+        for news in saved_models
+    ]
 
 @router.get("")
 def get_news(category: str, db: Session = Depends(get_db)):
