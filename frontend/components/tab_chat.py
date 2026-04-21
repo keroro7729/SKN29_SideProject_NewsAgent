@@ -1,7 +1,7 @@
 from datetime import datetime
 from html import escape
 import streamlit as st
-from utils.llm_api import chat_with_gpt
+from utils.api_client import send_message as api_send_message
 
 
 # ── 추천 질문 목록 ───────────────────────────────────────────────────────────
@@ -145,11 +145,11 @@ def _send_message(user_text: str) -> None:
     ctx = st.session_state.get("selected_article") or _build_news_context()
 
     with st.spinner("AI가 답변을 생성하고 있습니다…"):
-        reply = chat_with_gpt(
-            st.session_state.messages[:-1],
-            user_text,
-            ctx,
-        )
+        try:
+            resp = api_send_message(user_text, context=ctx)
+            reply = resp.get("response", "") or "⚠️ 빈 응답을 받았습니다."
+        except Exception as e:
+            reply = f"⚠️ 백엔드 호출 실패: {e}"
 
     st.session_state.messages.append({
         "role": "assistant",

@@ -15,10 +15,31 @@ st.set_page_config(
 # ── 모듈 임포트 ───────────────────────────────────────────────────────────────
 from constants         import CATEGORIES, CATEGORY_EMOJI, ARTICLES_PER_PAGE
 from styles.global_css import inject_css
-from data.dummy_news   import get_dummy_news, get_trending_keywords
+from data.dummy_news   import get_trending_keywords  # 트렌딩 키워드는 아직 더미(백엔드 엔드포인트 미구현)
+from utils.api_client  import (
+    search_news,
+    get_news_by_category,
+    adapt_articles,
+    ping,
+)
 import components.tab_news    as tab_news
 import components.tab_generic as tab_generic
 import components.tab_chat    as tab_chat
+
+
+# ── 캐시된 API 래퍼 ──────────────────────────────────────────────────────────
+# 같은 쿼리/카테고리로 재호출 시 네트워크 비용을 아끼기 위한 Streamlit 캐시.
+@st.cache_data(ttl=60, show_spinner=False)
+def _cached_search(query: str, count: int = 10) -> list[dict]:
+    return adapt_articles(search_news(query=query, count=count))
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _cached_by_category(category: str) -> list[dict]:
+    # 백엔드는 "전체" 카테고리를 별도로 저장하지 않으므로 프론트에서 쿼리 안 함
+    if category == CATEGORIES[0]:  # "전체"
+        return []
+    return adapt_articles(get_news_by_category(category))
 
 
 # ── 전역 CSS 주입 ─────────────────────────────────────────────────────────────
@@ -100,14 +121,14 @@ if search_clicked and query_input.strip():
     st.session_state.used_suggestions = set()   # 새 검색 → 추천 질문 리셋
     _reset_visible_counts()   # 새 검색 → 모든 탭 페이지 상태 리셋
 
-    with st.spinner("뉴스를 불러오는 중…"):
-        # ─ 실제 API/DB 연동 시 이 라인만 교체 ─
-        # from data.naver_api import fetch_news
-        # st.session_state.news_list = fetch_news(st.session_state.query)
-        st.session_state.news_list = get_dummy_news(
-            category=CATEGORIES[0],
-            query=st.session_state.query,
-        )
+    with st.spinner("뉴스를 불러오는 중… (최대 1분)"):
+        try:
+            st.session_state.news_list = _cached_search(
+                st.session_state.query, count=10
+            )
+        except Exception as e:
+            st.error(f"백엔드 호출 실패: {e}")
+            st.session_state.news_list = []
 
 st.markdown('<div class="ni-rule"></div>', unsafe_allow_html=True)
 
@@ -132,8 +153,12 @@ if not st.session_state.query:
     for i, (col, kw) in enumerate(zip(btn_cols, hot_keywords)):
         with col:
             if st.button(kw, key=f"hot_{i}", use_container_width=True):
-                st.session_state.query            = kw
-                st.session_state.news_list        = get_dummy_news(category=CATEGORIES[0], query=kw)
+                st.session_state.query = kw
+                try:
+                    st.session_state.news_list = _cached_search(kw, count=10)
+                except Exception as e:
+                    st.error(f"백엔드 호출 실패: {e}")
+                    st.session_state.news_list = []
                 st.session_state.used_suggestions = set()   # 핫 키워드 클릭 → 추천 질문 리셋
                 _reset_visible_counts()   # 핫 키워드 클릭 → 페이지 상태 리셋
                 st.rerun()
@@ -153,9 +178,17 @@ tabs = st.tabs(tab_labels)
 
 # ── 탭별 기사 로딩 ────────────────────────────────────────────────────────────
 def _load(category: str) -> list[dict]:
-    if category == CATEGORIES[0]: # "전체"
+    """
+    전체 탭: 방금 검색한 결과(news_list) 를 그대로 보여줍니다.
+    카테고리 탭: 백엔드에 저장된 해당 카테고리 뉴스를 조회합니다.
+    """
+    if category == CATEGORIES[0]:  # "전체"
         return st.session_state.news_list
-    return get_dummy_news(category=category, query="")
+    try:
+        return _cached_by_category(category)
+    except Exception as e:
+        st.error(f"[{category}] 백엔드 조회 실패: {e}")
+        return []
 
 
 # ══════════════════════════════════════════════════════════════════════════════
