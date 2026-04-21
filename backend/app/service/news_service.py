@@ -18,8 +18,8 @@ def _get_naver_client() -> NaverNewsClient:
 
 def to_news_entity(item: NewsItem, db) -> News:
     news = News(
-        title=item["title"],
-        full_content=item["full_content"],
+        title=item["title"].replace('<b>','').replace('</b>',''),
+        full_content=item["full_content"].replace('<b>','').replace('</b>',''),
         article_url=item["article_url"],
         image_url=item["image_url"],
         summary=item.get("summary"),

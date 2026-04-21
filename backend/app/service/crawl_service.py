@@ -42,7 +42,7 @@ def parse_naver_news(html_text: str) -> dict[str, str]:
     if article_tag:
         for tag in article_tag.select(".img_desc, script, style"):
             tag.decompose()
-        full_content = clean_text(article_tag.get_text(separator="\n", strip=True)).replace('<b>','').replace('</b>','')
+        full_content = clean_text(article_tag.get_text(separator="\n", strip=True))
         
     date_tag = soup.select_one("span.media_end_head_info_datestamp_time._ARTICLE_DATE_TIME")
     
